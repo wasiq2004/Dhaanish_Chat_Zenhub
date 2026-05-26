@@ -28,12 +28,19 @@ const { startSendWorker, shutdownSendQueue } = require('./queue/sendQueue');
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-const ALLOWED_ORIGINS = [
-  process.env.CORS_ORIGIN,
-  'http://localhost:5173',
-].filter(Boolean);
+function normalizeOrigin(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
 
-const CORS_DOMAIN = (process.env.CORS_ORIGIN || '').replace(/^https?:\/\//, '');
+const ALLOWED_ORIGINS = String(process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
+const PRIMARY_CORS_ORIGIN = normalizeOrigin(
+  String(process.env.CORS_ORIGIN || process.env.CORS_ORIGINS || '').split(',')[0]
+);
+const CORS_DOMAIN = PRIMARY_CORS_ORIGIN.replace(/^https?:\/\//, '');
 
 // Security middleware
 app.use(helmet({
@@ -58,7 +65,7 @@ app.use(cors({
   credentials: true,
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(normalizeOrigin(origin))) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
 }));

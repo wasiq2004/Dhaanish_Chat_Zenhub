@@ -181,10 +181,11 @@ router.post('/auth/login', async (req, res) => {
       return res.status(403).json({ error: 'Account is disabled. Contact an administrator.' });
     }
     const token = signToken(user);
+    const secureCookie = String(process.env.COOKIE_SECURE || '').trim().toLowerCase() === 'true';
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
+      secure: secureCookie,
       maxAge: 24 * 60 * 60 * 1000,
     });
     // Best-effort: stamp last_login_at; don't fail login if this errors.
