@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { id: 'contacts', label: 'Contacts', Icon: Users },
   { id: 'pipelines', label: 'Pipelines', Icon: KanbanSquare },
   { id: 'bulk-message', label: 'Bulk Message', Icon: Megaphone },
-  { id: 'about', label: 'About Us', Icon: Info },
+  // { id: 'about', label: 'About Us', Icon: Info },
 ];
 
 export default function Sidebar({ activePage, onPageChange, collapsed, setCollapsed, user }) {
