@@ -1,0 +1,98 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: forgecrm-caddy
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - forgecrm
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_HOST: forgecrm-backend
+        BACKEND_PORT: 3011
+    container_name: forgecrm-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - forgecrm
+
+  backend:
+    build:
+      context: ./backend
+    container_name: forgecrm-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3011/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_media:/app/media
+    networks:
+      - forgecrm
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: forgecrm-db
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/initdb:/docker-entrypoint-initdb.d:ro
+      - ./db/migrations:/migrations:ro
+    networks:
+      - forgecrm
+
+  redis:
+    image: redis:7-alpine
+    container_name: forgecrm-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - forgecrm
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+  backend_media:
+
+networks:
+  forgecrm:
+    driver: bridge
