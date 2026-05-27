@@ -1,7 +1,9 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 # ffmpeg for transcoding WhatsApp voice notes (Ogg/Opus → MP3) so Safari can play them
-RUN apk add --no-cache ffmpeg
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
