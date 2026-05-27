@@ -52,7 +52,7 @@ services:
     restart: unless-stopped
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     networks:
       - forgecrm
 
@@ -77,15 +77,9 @@ services:
       MEDIA_DIR: ${MEDIA_DIR}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3011/health >/dev/null 2>&1 || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_started
     volumes:
@@ -102,11 +96,6 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/initdb:/docker-entrypoint-initdb.d:ro
