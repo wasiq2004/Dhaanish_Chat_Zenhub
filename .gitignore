@@ -75,4 +75,3 @@ ForgeCRM_LLD.html
 *.dump
 *.sql.gz
 *.backup
-DEPLOY.md
